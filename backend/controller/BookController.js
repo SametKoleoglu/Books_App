@@ -8,6 +8,16 @@ const allBooks = async (req, res) => {
     res.status(200).json(books);
   } catch (error) {
     console.log("Error at fetching books", error);
+    return res.status(500).json({ message: "internal server error" });
+  }
+};
+
+const getBooksByUploader = async (req, res) => {
+  try {
+    const uploaderId =  req.user._id;
+    const books = await Book.find({ uploader: uploaderId });
+    res.status(200).json(books);
+  } catch (error) {
   }
 };
 
@@ -28,7 +38,9 @@ const ABook = async (req, res) => {
 
 const createBook = async (req, res) => {
   try {
-    const { title, author } = req.body;
+    const { title, author, description, page } = req.body;
+
+    const uploader = req.user._id;
 
     const existingBook = await Book.findOne({ title, author });
 
@@ -38,7 +50,13 @@ const createBook = async (req, res) => {
         .json({ message: "book already exists", data: existingBook });
     }
 
-    const newBook = await Book.create(req.body);
+    const newBook = await Book.create({
+      title,
+      author,
+      description,
+      page,
+      uploader,
+    });
 
     return res.status(201).json({ message: "success", data: newBook });
   } catch (error) {
@@ -107,4 +125,13 @@ const deleteBook = async (req, res) => {
   }
 };
 
-export { allBooks, createBook, ABook, updateBook, deleteBook };
+
+
+export {
+  allBooks,
+  createBook,
+  ABook,
+  updateBook,
+  deleteBook,
+  getBooksByUploader,
+};

@@ -8,11 +8,11 @@ const register = async (req, res) => {
       username: req.body.username,
     });
     if (existingUsername) {
-      return res.status(409).json({ message: "username already exists" });
+      return res.status(400).json({ error: "username already exists" });
     }
     const existingEmail = await User.findOne({ email: req.body.email });
     if (existingEmail) {
-      return res.status(409).json({ message: "email already exists" });
+      return res.status(400).json({ error: "email already exists" });
     }
 
     const newUser = await User.create(req.body);
@@ -46,7 +46,7 @@ const login = async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      return res.status(404).json({ message: "user not found" });
+      return res.status(404).json({ error: "user not found" });
     }
 
     // check if password correct
@@ -56,7 +56,7 @@ const login = async (req, res) => {
     );
 
     if (!isValidPassword) {
-      return res.status(401).json({ message: "your password is not correct" });
+      return res.status(401).json({ error: "your password is not correct" });
     }
 
     user.password = undefined;

@@ -19,16 +19,11 @@ const bookSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
-    category: {
-      type: String,
+    uploader:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 10,
-    },
+    }
   },
   {
     timestamps: true, //created_at, updated_at alanlarını oluşturacak!!!

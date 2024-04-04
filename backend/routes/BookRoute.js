@@ -5,14 +5,16 @@ import {
   createBook,
   deleteBook,
   updateBook,
+  getBooksByUploader,
 } from "../controller/BookController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/", allBooks);
-router.get("/:id", ABook);
-router.post("/create", createBook);
+// router.get("/:id", ABook);
+router.get("/uploader",authenticateUser, getBooksByUploader);
+router.post("/create",authenticateUser, createBook);
 router.put("/update/:id", updateBook);
 router.delete("/delete/:id", authenticateUser, deleteBook);
 

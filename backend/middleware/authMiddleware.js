@@ -11,7 +11,7 @@ export const authenticateUser = async (req, res, next) => {
   const tokenParts = authHeader.split(" ");
 
   if (tokenParts.length !== 2 || tokenParts[0] !== "Bearer") {
-    return res.status(401).json({ message: "Invalid token format" });
+    return res.status(401).json({ message: "Invalid auth header format" });
   }
 
   const token = tokenParts[1];
@@ -20,9 +20,9 @@ export const authenticateUser = async (req, res, next) => {
   try {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
 
-    console.log(decodedToken);
 
     req.user = await User.findById(decodedToken.userId);
+
 
     next();
   } catch (error) {

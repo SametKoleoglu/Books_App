@@ -23,7 +23,7 @@ export const useAuthStore = defineStore("authStore", {
         );
         return response.data;
       } catch (error) {
-        throw error;
+        throw error.response.data;
       } finally {
         this.isLoading = false;
       }
@@ -36,10 +36,14 @@ export const useAuthStore = defineStore("authStore", {
           "http://localhost:4000/api/v1/auth/login",
           userData
         );
-        this.user = response.data.data;
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        const token = response.data.token;
+
+        this.user = response.data.user;
+        localStorage.setItem("user", JSON.stringify(response.data));
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       } catch (error) {
-        console.log(error.message);
+        throw error.response.data;
       } finally {
         this.isLoading = false;
       }
