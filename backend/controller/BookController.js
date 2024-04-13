@@ -78,7 +78,7 @@ const createBook = async (req, res) => {
 };
 
 const updateBook = async (req, res) => {
-  const { title, author, description, page, rating } = req.body;
+  const { title, author, description, page } = req.body;
 
   if (isValidObjectId(req.params.id, res)) return;
 
@@ -91,21 +91,19 @@ const updateBook = async (req, res) => {
     book.author = author || book.author;
     book.description = description || book.description;
     book.page = page || book.page;
-    book.rating = rating || book.rating;
 
     await book.save();
 
     return res
       .status(200)
-      .json({ message: "Book updated successfully", UpdatedData: book });
+      .json({ message: "Book updated successfully" },book);
   } catch (error) {
     console.log("Error at updating book", error);
     return res.status(500).json({ message: "internal server error" });
   }
 };
 
-const deleteBook = async (req, res) => {
-  console.log("Req User : ", req.user);
+const deleteBook = async (req, res) => {  
 
   if (isValidObjectId(req.params.id, res)) return;
 

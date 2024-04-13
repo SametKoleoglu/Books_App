@@ -115,7 +115,7 @@
               <button
                 type="button"
                 class="btn btn-primary"
-                @click="modal.show()"
+                @click="openAddModal()"
               >
                 Add Book
               </button>
@@ -136,33 +136,33 @@
                     <th class="text-center">Delete</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <TransitionGroup name="list">
-                    <tr v-for="book in userBooks" :key="book._id">
-                      <td>{{ book.title }}</td>
-                      <td>{{ book.author }}</td>
-                      <td style="max-width: 250px">
-                        {{ book.description }}
-                      </td>
-                      <td>{{ book.page }}</td>
-                      <td class="text-center">
-                        <font-awesome-icon
-                          :icon="['far', 'pen-to-square']"
-                          class="text-warning"
-                          style="cursor: pointer"
-                        />
-                      </td>
-                      <td class="text-center">
-                        <font-awesome-icon
-                          :icon="['fas', 'trash']"
-                          class="text-danger"
-                          style="cursor: pointer"
-                          @click="deleteBook(book._id)"
-                        />
-                      </td>
-                    </tr>
-                  </TransitionGroup>
-                </tbody>
+
+                <TransitionGroup name="list" tag="tbody">
+                  <tr v-for="book in userBooks" :key="book._id">
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td style="max-width: 250px">
+                      {{ book.description }}
+                    </td>
+                    <td>{{ book.page }}</td>
+                    <td class="text-center">
+                      <font-awesome-icon
+                        :icon="['far', 'pen-to-square']"
+                        class="text-warning"
+                        style="cursor: pointer"
+                        @click="openEditModal(book)"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <font-awesome-icon
+                        :icon="['fas', 'trash']"
+                        class="text-danger"
+                        style="cursor: pointer"
+                        @click="deleteBook(book._id, book.title)"
+                      />
+                    </td>
+                  </tr>
+                </TransitionGroup>
               </table>
             </div>
           </div>
@@ -177,7 +177,9 @@
             <div class="modal-dialog">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="addModalLabel">Add Book</h5>
+                  <h5 class="modal-title" id="addModalLabel">
+                    {{ modalTitle }}
+                  </h5>
                   <button
                     @click="modal.hide()"
                     type="button"
@@ -251,7 +253,7 @@
                       Close
                     </button>
                     <button
-                      @click="addBook"
+                      @click="saveBook()"
                       type="button"
                       class="btn btn-primary"
                     >
@@ -293,11 +295,13 @@ export default {
 
       // Books
       modal: null,
+      modalTitle: "Add Book",
       newBook: {
         title: "",
         author: "",
         description: "",
         page: null,
+        newBookId: null,
       },
     };
   },
@@ -331,7 +335,12 @@ export default {
     ...mapActions(useAuthStore, ["logout"]),
 
     // Books
-    ...mapActions(useBookStore, ["addNewBook", "fetchBooksByUploader"]),
+    ...mapActions(useBookStore, [
+      "addNewBook",
+      "fetchBooksByUploader",
+      "deleteTheBook",
+      'editTheBook'
+    ]),
 
     // General
     toggleEditMode() {
@@ -364,30 +373,109 @@ export default {
     },
 
     // Books
+
+    saveBook() {
+      if (this.modalTitle == "Edit Book") {
+        this.editBook();
+      } else if (this.modalTitle == "Add Book") {
+        this.addBook();
+      }
+    },
+
+    openAddModal() {
+      this.modalTitle = "Add Book";
+      this.newBook = {
+        title: "",
+        author: "",
+        description: "",
+        page: null,
+      };
+      this.modal.show();
+    },
+
+    openEditModal(book) {
+      this.modalTitle = "Edit Book";
+      this.newBookId = book._id;
+      this.newBook = {
+        title: book.title,
+        author: book.author,
+        description: book.description,
+        page: book.page,
+      };
+      this.modal.show();
+    },
+
     async addBook() {
       try {
         // await this.$store.dispatch("addBook", this.newBook);
         await this.addNewBook(this.newBook);
+        this.modal.hide();
         this.newBook = {
           title: "",
           author: "",
           description: "",
           page: null,
         };
-        this.modal.hide();
 
         await this.fetchBooksByUploader();
 
-        const toast = useToast();
-        toast.success("Book added successfully!", {
-          timeout: 1000,
-          position: "top-right",
-          closeButton: "button",
-          icon: "fas fa-rocket",
+        this.showToast("Book added successfully!", {
+          type: "success",
         });
       } catch (error) {
         console.log(error);
       }
+    },
+
+    async editBook() {
+      try {
+        await this.editTheBook(this.newBookId, this.newBook);
+
+        await this.fetchBooksByUploader();
+
+        this.modal.hide();
+
+        this.showToast("Book updated successfully!", {
+          type: "success",
+        })
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async deleteBook(bookId, bookTitle) {
+      try {
+        await this.deleteTheBook(bookId);
+        await this.fetchBooksByUploader();
+        const toast = useToast();
+
+        // toast.warning(`${bookTitle} deleted successfully`, {
+        //   timeout: 2000,
+        //   position: "top-right",
+        //   closeButton: "button",
+        //   icon: true,
+        //   rtl: false,
+        // });
+
+        this.showToast(`${bookTitle} deleted successfully`, {
+          type: "warning",
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    showToast(message, options) {
+      const toast = useToast();
+
+      toast(message, {
+        timeout: 2000,
+        position: "top-right",
+        closeButton: "button",
+        icon: true,
+        rtl: false,
+        ...options,
+      });
     },
   },
 };
@@ -420,6 +508,7 @@ export default {
   border-color: var(--color-secondary);
 }
 
+.list-move,
 .list-enter-active,
 .list-leave-active {
   transition: all 2s ease;
@@ -429,5 +518,9 @@ export default {
 .list-leave-to {
   opacity: 0;
   transform: translateX(300px);
+}
+
+.list-leave-active {
+  position: absolute;
 }
 </style>

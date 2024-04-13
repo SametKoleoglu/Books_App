@@ -59,11 +59,12 @@ const login = async (req, res) => {
       return res.status(401).json({ error: "your password is not correct" });
     }
 
-    user.password = undefined;
+    user.password = undefined;""
+
 
     //Generate Token
     const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
-      expiresIn: process.env.JWT_EXPIRE_TIME,
+      expiresIn: process.env.EXPIRATION_TIME,
     });
 
     return res

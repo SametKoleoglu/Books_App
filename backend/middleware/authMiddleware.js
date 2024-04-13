@@ -15,17 +15,18 @@ export const authenticateUser = async (req, res, next) => {
   }
 
   const token = tokenParts[1];
-  console.log(token);
 
   try {
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
 
-
     req.user = await User.findById(decodedToken.userId);
-
 
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    } else {
+      return res.status(500).json({ message: "Internal server error" });
+    }
   }
 };

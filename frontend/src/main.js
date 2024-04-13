@@ -9,7 +9,6 @@ import { useBookStore } from "./stores/bookStore.js";
 import { useAuthStore } from "./stores/authStore.js";
 import axios from "axios";
 
-
 // TOAST
 import Toast from "vue-toastification";
 // Import the CSS or use your own!
@@ -26,12 +25,44 @@ import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { faThumbsUp } from "@fortawesome/free-regular-svg-icons";
 import { faPenToSquare } from "@fortawesome/free-regular-svg-icons";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { useToast } from "vue-toastification";
 
+const toast = useToast();
+
+toast.success("Book added successfully!", {
+  timeout: 1000,
+  position: "top-right",
+  closeButton: "button",
+  icon: "fas fa-rocket",
+  rtl: false,
+});
 
 /*add icons to the library*/
 library.add(faArrowLeft, faThumbsUp, faPenToSquare, faTrash);
 
 const pinia = createPinia();
+const authStore = useAuthStore(pinia);
+
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response.status === 401 && error.response) {
+      toast.error("Your token has expired, forwarding to login page ", {
+        timeout: 2000,
+        position: "top-right",
+        closeButton: "button",
+        icon: true,
+        rtl: false,
+      });
+
+      setTimeout(() => {
+        authStore.logout();
+        router.push({ name: "login" });
+      }, 2000);
+    }
+    return Promise.reject(error);
+  }
+);
 
 const storedUser = localStorage.getItem("user");
 
@@ -40,8 +71,7 @@ if (storedUser) {
   useAuthStore(pinia).user = userData;
 
   const token = userData.token;
-  if (token)
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }
 
 const bookStore = useBookStore(pinia);
