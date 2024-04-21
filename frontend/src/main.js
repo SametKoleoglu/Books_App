@@ -21,10 +21,8 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 /* import specific icons */
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import { faThumbsUp } from "@fortawesome/free-regular-svg-icons";
-import { faPenToSquare } from "@fortawesome/free-regular-svg-icons";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faTrash,faArrowLeft,faThumbsUp } from "@fortawesome/free-solid-svg-icons";
+import { faThumbsUp as farThumbsUp,faPenToSquare } from "@fortawesome/free-regular-svg-icons";
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
@@ -38,7 +36,7 @@ toast.success("Book added successfully!", {
 });
 
 /*add icons to the library*/
-library.add(faArrowLeft, faThumbsUp, faPenToSquare, faTrash);
+library.add(faArrowLeft, faThumbsUp, faPenToSquare, faTrash,farThumbsUp);
 
 const pinia = createPinia();
 const authStore = useAuthStore(pinia);
@@ -68,7 +66,7 @@ const storedUser = localStorage.getItem("user");
 
 if (storedUser) {
   const userData = JSON.parse(storedUser);
-  useAuthStore(pinia).user = userData;
+  useAuthStore(pinia).user = userData.user;
 
   const token = userData.token;
   if (token) axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;

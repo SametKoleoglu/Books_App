@@ -72,7 +72,6 @@ export const useBookStore = defineStore("bookStore", {
         const response = await axios.get(
           `http://localhost:4000/api/v1/books/uploader`
         );
-        console.log(response.data);
         this.userUploadedBooks = response.data;
       } catch (error) {
         console.error("Error at user uploaded books", error.message);

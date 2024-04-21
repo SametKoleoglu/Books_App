@@ -1,5 +1,5 @@
 <template>
-  <section style="min-height: calc(100vh - 130px)">
+  <section style="min-height: calc(100vh - 130px); overflow: hidden;">
     <div class="container py-5">
       <ul class="nav nav-tabs" id="dashboardTab" role="tablist">
         <li class="nav-item" role="presentation" @click="activeTab = 'general'">
@@ -138,7 +138,7 @@
                 </thead>
 
                 <TransitionGroup name="list" tag="tbody">
-                  <tr v-for="book in userBooks" :key="book._id">
+                  <tr v-for="book in paginatedBooks" :key="book._id">
                     <td>{{ book.title }}</td>
                     <td>{{ book.author }}</td>
                     <td style="max-width: 250px">
@@ -165,6 +165,14 @@
                 </TransitionGroup>
               </table>
             </div>
+          </div>
+
+          <div class="row">
+            <Pagination
+              :currentPage="currentPage"
+              :totalPages="totalPages"
+              @page-changed="updatePage"
+            />
           </div>
 
           <!-- Modal -->
@@ -226,7 +234,7 @@
                       id="description"
                       class="form-control"
                       cols="30"
-                      rows="10"
+                      rows="4" 
                       v-model="newBook.description"
                     ></textarea>
                   </div>
@@ -278,9 +286,14 @@ import { mapState, mapActions } from "pinia";
 import { useToast } from "vue-toastification";
 
 import { Modal } from "bootstrap";
+import Pagination from "@/components/Pagination.vue";
+
 
 export default {
   name: "DashboardView",
+  components: {
+    Pagination,
+  },
   data() {
     return {
       activeTab: "books",
@@ -303,6 +316,8 @@ export default {
         page: null,
         newBookId: null,
       },
+      currentPage: 1,
+      itemsPerPage: 4,
     };
   },
   mounted() {
@@ -323,6 +338,14 @@ export default {
 
     // Books
     ...mapState(useBookStore, ["userUploadedBooks"]),
+    totalPages() {
+      return Math.ceil(this.userBooks.length / this.itemsPerPage);
+    },
+    paginatedBooks() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.userBooks.slice(startIndex, endIndex);
+    },
     userBooks() {
       return this.userUploadedBooks
         .slice()
@@ -339,7 +362,7 @@ export default {
       "addNewBook",
       "fetchBooksByUploader",
       "deleteTheBook",
-      'editTheBook'
+      "editTheBook",
     ]),
 
     // General
@@ -409,6 +432,8 @@ export default {
       try {
         // await this.$store.dispatch("addBook", this.newBook);
         await this.addNewBook(this.newBook);
+
+        this.currentPage = 1;
         this.modal.hide();
         this.newBook = {
           title: "",
@@ -437,7 +462,7 @@ export default {
 
         this.showToast("Book updated successfully!", {
           type: "success",
-        })
+        });
       } catch (error) {
         console.log(error);
       }
@@ -476,6 +501,10 @@ export default {
         rtl: false,
         ...options,
       });
+    },
+
+    updatePage(page) {
+      this.currentPage = page;
     },
   },
 };

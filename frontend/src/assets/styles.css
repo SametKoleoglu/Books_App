@@ -21,7 +21,7 @@ a {
   align-items: center;
 }
 
-.form-control {
+.form-control:not(textarea) {
   border-radius: 25px;
   height: 48px;
 }
@@ -38,11 +38,23 @@ a {
   border: 1px solid var(--color-secondary) !important;
   font-weight: bold;
   min-width: 175px;
-  
 }
 
 .btn-primary:hover {
   background-color: #fff !important;
   color: var(--color-secondary) !important;
   transition: all 0.3s ease;
+}
+
+.page-link {
+  color: var(--color-primary);
+}
+
+.page-link:hover {
+  cursor: pointer;
+}
+
+.page-link, .page-link.active {
+  background-color: var(--color-secondary) !important;
+  border-color: #fff !important;
 }
