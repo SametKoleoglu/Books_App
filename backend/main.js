@@ -5,6 +5,7 @@ import connectDb from "./config/Db.js";
 import userRouter from "./routes/UserRoute.js";
 import authRouter from "./routes/AuthRoute.js";
 import commentRouter from "./routes/CommentRoute.js";
+import ratingRouter from "./routes/RatingRoute.js";
 import cors from "cors";
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use("/api/v1/books", bookRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/ratings", ratingRouter);
 
 app.get("/", (req, res) => {
   res.send(`

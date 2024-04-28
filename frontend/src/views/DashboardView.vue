@@ -1,5 +1,5 @@
 <template>
-  <section style="min-height: calc(100vh - 130px); overflow: hidden;">
+  <section style="min-height: calc(100vh - 130px); overflow: hidden">
     <div class="container py-5">
       <ul class="nav nav-tabs" id="dashboardTab" role="tablist">
         <li class="nav-item" role="presentation" @click="activeTab = 'general'">
@@ -30,6 +30,25 @@
             aria-selected="false"
           >
             Books
+          </button>
+        </li>
+        <li
+          class="nav-item"
+          role="presentation"
+          @click="activeTab = 'comments'"
+        >
+          <button
+            class="nav-link"
+            :class="{ active: activeTab === 'comments' }"
+            id="books-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#comments-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="comments-tab-pane"
+            aria-selected="false"
+          >
+            Comments
           </button>
         </li>
       </ul>
@@ -234,7 +253,7 @@
                       id="description"
                       class="form-control"
                       cols="30"
-                      rows="4" 
+                      rows="4"
                       v-model="newBook.description"
                     ></textarea>
                   </div>
@@ -273,6 +292,54 @@
             </div>
           </div>
         </div>
+
+        <!-- COMMENTS -->
+        <div
+          class="tab-pane fade"
+          :class="{ 'active show': activeTab === 'comments' }"
+          id="comments-tab-pane"
+          role="tabpanel"
+          aria-labelledby="comments-tab"
+          tabindex="0"
+        >
+          <div class="row">
+            <div class="col">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Content</th>
+                    <th>Book</th>
+                    <th class="text-center">Edit</th>
+                    <th class="text-center">Delete</th>
+                  </tr>
+                </thead>
+
+                <TransitionGroup name="list" tag="tbody">
+                  <tr v-for="comment in commentsByUser" :key="comment._id">
+                    <td>{{ comment.content }}</td>
+                    <td>{{ comment.book.title }}</td>
+                    <td class="text-center">
+                      <font-awesome-icon
+                        :icon="['far', 'pen-to-square']"
+                        class="text-warning"
+                        style="cursor: pointer"
+                        @click="openEditModal(book)"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <font-awesome-icon
+                        :icon="['fas', 'trash']"
+                        class="text-danger"
+                        style="cursor: pointer"
+                        @click="deleteBook(book._id, book.title)"
+                      />
+                    </td>
+                  </tr>
+                </TransitionGroup>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -282,12 +349,12 @@
 import { useAuthStore } from "@/stores/authStore.js";
 import { useUserStore } from "@/stores/userStore.js";
 import { useBookStore } from "@/stores/bookStore.js";
+import { useCommentStore } from "@/stores/commentStore.js";
 import { mapState, mapActions } from "pinia";
 import { useToast } from "vue-toastification";
 
 import { Modal } from "bootstrap";
 import Pagination from "@/components/Pagination.vue";
-
 
 export default {
   name: "DashboardView",
@@ -296,7 +363,7 @@ export default {
   },
   data() {
     return {
-      activeTab: "books",
+      activeTab: "comments",
 
       // General
       userInfo: {
@@ -331,6 +398,9 @@ export default {
 
     // Books
     this.fetchBooksByUploader(this.user._id);
+
+    // Comments
+    this.fetchCommentsByUser(this.user._id);
   },
   computed: {
     // General
@@ -338,6 +408,10 @@ export default {
 
     // Books
     ...mapState(useBookStore, ["userUploadedBooks"]),
+
+    // Comments
+    ...mapState(useCommentStore, ["commentsByUser"]),
+
     totalPages() {
       return Math.ceil(this.userBooks.length / this.itemsPerPage);
     },
@@ -364,6 +438,11 @@ export default {
       "deleteTheBook",
       "editTheBook",
     ]),
+
+
+    // Comments
+    ...mapActions(useCommentStore, ["fetchCommentsByUser"]),
+
 
     // General
     toggleEditMode() {

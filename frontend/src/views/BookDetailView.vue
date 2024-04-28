@@ -27,11 +27,11 @@
           <div class="d-flex flex-column">
             <div class="row border-bottom pb-2">
               <div class="col-lg-6"><strong>Page</strong></div>
-              <div class="col-lg-6">{{ book.pageNumber }}</div>
+              <div class="col-lg-6">{{ book.page }}</div>
             </div>
             <div class="row border-bottom pb-2">
               <div class="col-lg-6"><strong>Rating</strong></div>
-              <div class="col-lg-6">8.2 - (23 rates)</div>
+              <div class="col-lg-6">{{ averageRating }} - ({{ ratingCount }})</div>
             </div>
             <div class="row border-bottom pb-2">
               <div class="col-lg-6"><strong>Upload Date</strong></div>
@@ -44,24 +44,42 @@
     <div class="row mt-3">
       <div class="col-md-6">
         <div class="box">
-          <h3 style="color: var(--primary-color)">Rate The Book</h3>
-          <form>
-            <!-- Rating Input -->
-            <div class="mb-3">
-              <input
-                type="number"
-                id="rating"
-                class="form-control w-50"
-                min="1"
-                max="10"
-                placeholder="Rate (1-10)"
-                required
-              />
+          <div v-if="isLoggedIn">
+            <div v-if="!isUserAlreadyRated">
+              <h3 style="color: var(--primary-color)">Rate The Book</h3>
+              <form @submit.prevent="addRate">
+                <!-- Rating Input -->
+                <div class="mb-3">
+                  <input
+                    type="number"
+                    id="rating"
+                    class="form-control w-50"
+                    min="1"
+                    max="10"
+                    placeholder="Rate (1-10)"
+                    required
+                    v-model="userRate"
+                  />
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary">Rate</button>
+              </form>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary">Rate</button>
-          </form>
+            <div v-else>
+
+              Your Rate: {{ userRating }}
+
+            </div>
+
+          </div>
+
+          <router-link v-else :to="{ name: 'login' }">
+            <p style="color: var(--secondary-color)">
+              Log in to leave a rate for Book
+            </p>
+          </router-link>
         </div>
       </div>
     </div>
@@ -90,7 +108,9 @@
           </div>
 
           <router-link v-else :to="{ name: 'login' }">
-            <p style="color: var(--secondary-color)">Log in to leave a comment</p>
+            <p style="color: var(--secondary-color)">
+              Log in to leave a comment
+            </p>
           </router-link>
         </div>
       </div>
@@ -104,7 +124,7 @@
             <div
               class="card mb-4"
               v-for="comment in commentForBook"
-              :key="comment_id"
+              :key="comment._id"
             >
               <div class="card-body">
                 <p>
@@ -140,6 +160,7 @@ import SectionHeader from "@/components/SectionHeader.vue";
 import { useBookStore } from "@/stores/bookStore.js";
 import { useAuthStore } from "@/stores/authStore.js";
 import { useCommentStore } from "@/stores/commentStore.js";
+import { useRatingStore } from "@/stores/ratingStore.js";
 import { mapState, mapActions } from "pinia";
 export default {
   name: "BookDetailView",
@@ -151,14 +172,18 @@ export default {
       book: null,
       loading: true,
       commentContent: "",
+      userRate: null,
     };
   },
   created() {
     this.selectBook();
     this.fetchCommentsForBook(this.$route.params.id);
+    this.fetchRatingsForBook(this.$route.params.id);
+
   },
   methods: {
     ...mapActions(useCommentStore, ["addNewComment", "fetchCommentsForBook"]),
+    ...mapActions(useRatingStore, ["addNewRate", "fetchRatingsForBook"]),
     async addComment() {
       try {
         const bookId = this.$route.params.id;
@@ -178,6 +203,22 @@ export default {
         console.log(error.message);
       }
     },
+
+    async addRate() {
+      try {
+        const bookId = this.$route.params.id;
+        const userId = this.user._id;
+        const rate = this.userRate;
+        await this.addNewRate({ bookId, userId, rate });
+
+        this.userRate = null;
+
+        await this.fetchRatingsForBook(this.$route.params.id);
+      } catch (error) {
+        console.log(error.message);
+      }
+    },
+
     goToBackBooks() {
       this.$router.push({ name: "books" });
     },
@@ -191,6 +232,38 @@ export default {
     ...mapState(useBookStore, ["selectedBook"]),
     ...mapState(useAuthStore, ["user", "isLoggedIn"]),
     ...mapState(useCommentStore, ["commentForBook"]),
+    ...mapState(useRatingStore, ["ratingsForBook"]),
+
+    averageRating() {
+      if (this.ratingsForBook.length > 0) {
+        const sum = this.ratingsForBook.reduce((a, b) => a + b.rate, 0);
+        return (sum / this.ratingsForBook.length).toFixed(1);
+      } else {
+        return 0;
+      }
+    },
+
+    ratingCount() {
+      return this.ratingsForBook ? this.ratingsForBook.length : 0;
+    },
+
+    isUserAlreadyRated() {
+      if (this.user) {
+        return this.ratingsForBook.some(
+          (rating) => rating.ratingBy._id === this.user._id
+        );
+      } else if (!this.user) {
+        return false;
+      }
+    },
+
+    userRating() {
+      const userRatingObj = this.ratingsForBook.find(
+        (rating) => rating.ratingBy._id === this.user._id
+      );
+
+      return userRatingObj ? userRatingObj.rate : null;
+    },
   },
 };
 </script>
