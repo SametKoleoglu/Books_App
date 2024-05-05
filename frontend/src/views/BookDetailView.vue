@@ -31,7 +31,9 @@
             </div>
             <div class="row border-bottom pb-2">
               <div class="col-lg-6"><strong>Rating</strong></div>
-              <div class="col-lg-6">{{ averageRating }} - ({{ ratingCount }})</div>
+              <div class="col-lg-6">
+                {{ averageRating }} - ({{ ratingCount }} rates)
+              </div>
             </div>
             <div class="row border-bottom pb-2">
               <div class="col-lg-6"><strong>Upload Date</strong></div>
@@ -67,12 +69,7 @@
               </form>
             </div>
 
-            <div v-else>
-
-              Your Rate: {{ userRating }}
-
-            </div>
-
+            <div v-else>Your Rate: {{ userRating }}</div>
           </div>
 
           <router-link v-else :to="{ name: 'login' }">
@@ -141,9 +138,61 @@
                     class="d-flex flex-row align-items-center"
                     style="gap: 10px"
                   >
-                    <p class="small text-muted mb-0">Upvote?</p>
-                    <font-awesome-icon :icon="['far', 'thumbs-up']" />
-                    <p class="small text-muted mb-0">3</p>
+                    <div v-if="!user">
+                      <p class="small mb-0">Login for uptovel</p>
+                      <font-awesome-icon
+                        :icon="['fas', 'thumbs-up']"
+                        style="color: var(--secondary-color)"
+                      />
+                    </div>
+                    <div
+                      class="d-flex flex-row align-items-center"
+                      style="gap: 10px; cursor: pointer"
+                      v-else-if="
+                        !comment.upvotes.includes(user._id) &&
+                        comment.postedBy._id !== user._id
+                      "
+                      @click="upvote(comment._id)"
+                    >
+                      <p class="small mb-0">Upvote?</p>
+                      <font-awesome-icon
+                        :icon="['far', 'thumbs-up']"
+                      />
+                    </div>
+
+                    <div
+                      class="d-flex flex-row align-items-center"
+                      style="gap: 10px; cursor: pointer"
+                      v-else-if="
+                        comment.upvotes.includes(user._id) &&
+                        comment.postedBy._id !== user._id
+                      "
+                      @click="downvote(comment._id)"
+                    >
+                      <p class="small mb-0">Upvoted</p>
+                      <font-awesome-icon
+                        :icon="['fas', 'thumbs-up']"
+                        style="color: var(--color-secondary)"
+                      />  
+                    </div>
+
+                    <div
+                      class="d-flex flex-row align-items-center"
+                      style="gap: 10px; cursor: pointer"
+                      v-else
+                    >
+                      <p class="small text-muted mb-0">
+                        You can't vote for your comment
+                      </p>
+                      <font-awesome-icon
+                        :icon="['fas', 'thumbs-up']"
+                        style="color: var(--secondary-color)"
+                      />
+                    </div>
+
+                    <p class="small text-muted mb-0">
+                      {{ comment.upvotes.length }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -179,11 +228,36 @@ export default {
     this.selectBook();
     this.fetchCommentsForBook(this.$route.params.id);
     this.fetchRatingsForBook(this.$route.params.id);
-
   },
   methods: {
-    ...mapActions(useCommentStore, ["addNewComment", "fetchCommentsForBook"]),
+    ...mapActions(useCommentStore, [
+      "addNewComment",
+      "fetchCommentsForBook",
+      "upvoteComment",
+      "downvoteComment",
+    ]),
     ...mapActions(useRatingStore, ["addNewRate", "fetchRatingsForBook"]),
+
+    async upvote(commentId) {
+      try {
+        await this.upvoteComment(commentId);
+
+        await this.fetchCommentsForBook(this.$route.params.id);
+      } catch (error) {
+        console.log(error.message);
+      }
+    },
+
+    async downvote(commentId) {
+      try {
+        await this.downvoteComment(commentId);
+
+        await this.fetchCommentsForBook(this.$route.params.id);
+      } catch (error) {
+        console.log(error.message);
+      }
+    },
+
     async addComment() {
       try {
         const bookId = this.$route.params.id;
@@ -235,21 +309,21 @@ export default {
     ...mapState(useRatingStore, ["ratingsForBook"]),
 
     averageRating() {
-      if (this.ratingsForBook.length > 0) {
-        const sum = this.ratingsForBook.reduce((a, b) => a + b.rate, 0);
-        return (sum / this.ratingsForBook.length).toFixed(1);
+      if (this.book.ratings.length > 0) {
+        const sum = this.book.ratings.reduce((a, b) => a + b.rate, 0);
+        return (sum / this.book.ratings.length).toFixed(1);
       } else {
         return 0;
       }
     },
 
     ratingCount() {
-      return this.ratingsForBook ? this.ratingsForBook.length : 0;
+      return this.book.ratings ? this.book.ratings.length : 0;
     },
 
     isUserAlreadyRated() {
       if (this.user) {
-        return this.ratingsForBook.some(
+        return this.book.ratings.some(
           (rating) => rating.ratingBy._id === this.user._id
         );
       } else if (!this.user) {
@@ -258,7 +332,7 @@ export default {
     },
 
     userRating() {
-      const userRatingObj = this.ratingsForBook.find(
+      const userRatingObj = this.book.ratings.find(
         (rating) => rating.ratingBy._id === this.user._id
       );
 

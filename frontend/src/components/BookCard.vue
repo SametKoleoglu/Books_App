@@ -19,15 +19,15 @@
           style="background-color: var(--color-primary)"
           class="py-1 px-2 text-white badge mb-0"
         >
-          {{ book.uploadDate }}
+          {{ book.createdAt }}
         </p>
       </div>
     </div>
     <span
       :class="ratingBadgeClass"
-      class="position-absolute top-0 start-100 translate-middle p-2 rounded-circle text-light border border-2 border-light"
+      class="position-absolute top-0 start-100 translate-middle p-2 rounded-circle text-light border border-2 border-light custom-center"
     >
-      {{ book.rating }}
+      {{ averageRating }}
     </span>
   </div>
 </template>
@@ -42,10 +42,21 @@ export default {
     },
   },
   computed: {
+    averageRating() {
+      if (this.book.ratings.length > 0) {
+        const sum = this.book.ratings.reduce((a, b) => a + b.rate, 0);
+        return (sum / this.book.ratings.length).toFixed(1);
+      } else {
+        return '-';
+      }
+    },
+
     ratingBadgeClass() {
-      if (this.book.rating > 7) {
+      console.log(this.book);
+
+      if (this.averageRating > 7 || this.averageRating === '-') {
         return "bg-success";
-      } else if (this.book.rating > 4) {
+      } else if (this.averageRating > 4) {
         return "bg-warning";
       } else {
         return "bg-danger";
@@ -65,5 +76,12 @@ export default {
 <style scoped>
 .card-text {
   min-height: 70px;
+}
+.custom-center {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

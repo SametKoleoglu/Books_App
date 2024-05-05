@@ -1,5 +1,6 @@
 import axios from "axios";
 import { defineStore } from "pinia";
+import { useBookStore } from "./bookStore.js";
 
 export const useRatingStore = defineStore("ratingStore", {
   state: () => ({
@@ -22,6 +23,7 @@ export const useRatingStore = defineStore("ratingStore", {
     },
 
     async fetchRatingsForBook(bookId) {
+      const bookStore = useBookStore();
       this.isLoading = true;
       try {
         const response = await axios.get(
@@ -29,6 +31,16 @@ export const useRatingStore = defineStore("ratingStore", {
           bookId
         );
         this.ratingsForBook = response.data.ratings;
+
+        const bookIndex = bookStore.books.findIndex(
+          (book) => book._id === bookId
+        );
+        if (bookIndex !== -1) {
+          bookStore.books[bookIndex].ratings = this.ratingsForBook;
+        } else {
+          console.warn(`Book with id : ${bookId} not found`);
+        }
+        
       } catch (error) {
         throw error.response.data;
       } finally {

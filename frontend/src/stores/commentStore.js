@@ -6,32 +6,36 @@ export const useCommentStore = defineStore("commentStore", {
     comments: [],
     isLoading: false,
     commentForBook: [],
-    commentsByUser : [],
+    commentsByUser: [],
   }),
   actions: {
     async fetchComments() {
       this.isLoading = true;
       try {
-        await axios
-          .get("http://localhost:4000/api/v1/comments")
-          .then((response) => {
-            this.comments = response.data;
-            console.log("Data fetching process successful :)");
-          });
+        const response = await axios.get(
+          "http://localhost:4000/api/v1/comments"
+        );
+
+        console.log(response.data.comments);
+        this.comments = response.data.comments;
+        console.log("Comments fetching process successful :)");
       } catch (error) {
-        console.log(error.message);
+        console.log("Error at fetching comments", error.message);
+        return res.status(500).json({ message: "internal server error" });
       } finally {
         this.isLoading = false;
       }
     },
+
     async addNewComment(newComment) {
       this.isLoading = true;
       try {
-        const response = await axios.post(
+        await axios.post(
           "http://localhost:4000/api/v1/comments/create",
           newComment
         );
-        this.comments.push(response.data.comment);
+
+        await this.fetchComments();
       } catch (error) {
         throw error.response.data;
       } finally {
@@ -66,6 +70,46 @@ export const useCommentStore = defineStore("commentStore", {
         console.log(error.message);
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    async upvoteComment(commentId) {
+      try {
+        const response = await axios.post(
+          `http://localhost:4000/api/v1/comments/${commentId}/upvote`
+        );
+
+        const updatedComment = response.data.comment;
+
+        const commentIndex = this.comments.findIndex(
+          (comment) => comment._id === updatedComment._id
+        );
+
+        if (commentIndex !== -1) {
+          this.comments[commentIndex] = this.updatedComment;
+        }
+      } catch (error) {
+        console.log(error.message);
+      }
+    },
+
+    async downvoteComment(commentId) {
+      try {
+        const response = await axios.post(
+          `http://localhost:4000/api/v1/comments/${commentId}/downvote`
+        );
+
+        const updatedComment = response.data.comment;
+
+        const commentIndex = this.comments.findIndex(
+          (comment) => comment._id === updatedComment._id
+        );
+
+        if (commentIndex !== -1) {
+          this.comments[commentIndex] = this.updatedComment;
+        }
+      } catch (error) {
+        console.log(error.message);
       }
     },
   },
